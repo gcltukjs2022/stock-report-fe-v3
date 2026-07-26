@@ -19,9 +19,10 @@ export function buildReportDownloadUrl(date: Date = new Date()): string {
 /**
  * Whether the daily report is available to download right now.
  *
- * The backend generates it on weekdays at ~17:00 HKT, and the download is offered
- * through the rest of the day — so the button is live on weekdays from 17:00 HKT
- * until midnight. Hong Kong is UTC+8 with no DST, so that maps to 09:00–16:00 UTC.
+ * The backend generates it on weekdays at ~16:55 HKT (08:55 UTC). The download
+ * button is offered a few minutes later — weekdays from 17:00 HKT until midnight
+ * — so the file has landed by the time it appears. Hong Kong is UTC+8 with no DST,
+ * so 17:00–24:00 HKT maps to 09:00–16:00 UTC.
  */
 const REPORT_START_UTC_HOUR = 9; // 17:00 HKT
 const REPORT_END_UTC_HOUR = 16; // 00:00 HKT (next day)
