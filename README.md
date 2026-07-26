@@ -1,77 +1,69 @@
-# React + TypeScript + Vite
+# Stock Watchlist (stock-report-fe-v3)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The control panel for the **stock-report** pipeline — a single-page React app that lets you:
 
-Currently, two official plugins are available:
+- **Manage the watchlist** — add, list, and remove the stocks the backend scrapes (symbol, name, currency, and the Futunn / AAStocks scrape params).
+- **Download the daily report** — grab the generated `.docx` for the current day.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Tech stack
 
-## React Compiler
+- **React 19** + **TypeScript**, built with **Vite**
+- **Tailwind CSS v4** for styling
+- **axios** for HTTP
+- **IBM Plex Sans / IBM Plex Mono** (Google Fonts)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Project structure
 
 ```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+src/
+  config/env.ts     Validated, typed environment config (single source of truth)
+  types/stock.ts    Stock + Currency types
+  services/         httpClient (axios instance) · stocksService · reportService
+  hooks/            useStocks (list/add/remove) · useReport (download URL + readiness)
+  components/       StockManager (page) · AppHeader · ReportCard · StockForm · StockTable
+    ui/             Button · TextField · Alert + shared style constants
 ```
-# stock-report-fe-v2
-# stock-report-fe-v3
+
+The data layer (`services/`) is decoupled from React, hooks own state, and components stay presentational.
+
+## Environment variables
+
+Vite only exposes variables prefixed with `VITE_` to the client, and they are **compiled into the build** (publicly visible — never put secrets here). Copy `.env.example` to `.env` and fill in:
+
+| Variable | Purpose |
+| --- | --- |
+| `VITE_API_BASE_URL` | Base URL of the stock-manager API Gateway serving `GET/POST/DELETE /stocks`. |
+| `VITE_REPORT_DOWNLOAD_URL` | Templated URL for the daily report. Must contain a `{date}` token, replaced at runtime with the report date as **DDMMYYYY (UTC)** — matching the backend's `report-v3-DDMMYYYY.docx` filename. |
+
+**Why the `{date}` template?** The backend names each report by date, so the URL is deterministic and the app can build it directly with no lookup call. Keeping the *entire* URL in one variable means you can repoint the download at any bucket/path — for example, fall back to an older source — by editing a single line, with no code change. The date is formatted in **UTC** to stay in step with the backend's clock (the report job runs at 09:00 UTC); local time would drift by a day near the UTC-midnight boundary and 404.
+
+Config is validated once at startup in `src/config/env.ts`: a missing variable — or a `VITE_REPORT_DOWNLOAD_URL` without a `{date}` token — throws a clear error instead of failing silently later.
+
+## Getting started
+
+```bash
+npm install
+cp .env.example .env   # then fill in the two variables
+npm run dev            # http://localhost:5173
+```
+
+Other scripts:
+
+```bash
+npm run build     # type-check (tsc -b) + production build to dist/
+npm run lint      # ESLint
+npm run preview   # serve the production build locally
+```
+
+## Deployment
+
+`npm run build` outputs a static bundle to `dist/` — host it anywhere static (e.g. S3 + CloudFront). The `VITE_*` variables are baked in at build time, so set them in the build environment **before** running `npm run build`.
+
+## Browser support & responsiveness
+
+Targets modern browsers. Tailwind CSS v4 sets the floor — **Safari 16.4+, Chrome 111+, Firefox 128+** (≈ 2023 onward), which covers current iOS Safari and Android Chrome. The layout is responsive down to small phones: sections stack to a single column, and the watchlist table scrolls horizontally within its own container rather than overflowing the page.
+
+## Related services
+
+- **Stock-manager API** (`VITE_API_BASE_URL`) — a separate API Gateway backend that owns the `Stocks` DynamoDB table.
+- **Report pipeline** (`stock-report-be-v3`) — scrapes the news, generates the daily `.docx`, and uploads it to the S3 bucket the download URL points at.
