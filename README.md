@@ -35,7 +35,7 @@ Vite only exposes variables prefixed with `VITE_` to the client, and they are **
 | `VITE_API_BASE_URL` | Base URL of the stock-manager API Gateway serving `GET/POST/DELETE /stocks`. |
 | `VITE_REPORT_DOWNLOAD_URL` | Templated URL for the daily report. Must contain a `{date}` token, replaced at runtime with the report date as **DDMMYYYY (UTC)** — matching the backend's `report-v3-DDMMYYYY.docx` filename. |
 
-**Why the `{date}` template?** The backend names each report by date, so the URL is deterministic and the app can build it directly with no lookup call. Keeping the *entire* URL in one variable means you can repoint the download at any bucket/path — for example, fall back to an older source — by editing a single line, with no code change. The date is formatted in **UTC** to stay in step with the backend's clock (the report job runs at 08:55 UTC); local time would drift by a day near the UTC-midnight boundary and 404.
+**Why the `{date}` template?** The backend names each report by date, so the URL is deterministic and the app can build it directly with no lookup call. Keeping the *entire* URL in one variable means you can repoint the download at any bucket/path — for example, fall back to an older source — by editing a single line, with no code change. The date is formatted in **UTC** to stay in step with the backend's clock (the report job runs at 08:40 UTC); local time would drift by a day near the UTC-midnight boundary and 404.
 
 Config is validated once at startup in `src/config/env.ts`: a missing variable — or a `VITE_REPORT_DOWNLOAD_URL` without a `{date}` token — throws a clear error instead of failing silently later.
 

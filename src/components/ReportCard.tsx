@@ -33,7 +33,7 @@ export function ReportCard() {
         <p className="text-sm text-slate-600">
           {ready
             ? "Today's report is ready to download."
-            : "Available on weekdays, 17:00–midnight HKT."}
+            : "Available on weekdays, 16:45–midnight HKT."}
         </p>
       </div>
       {ready ? (
